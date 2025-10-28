@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英検3級 3分間熟語クイズ (50問版)</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 10px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        #status {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: bold;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #ecf0f1;
+        }
+        #question-text {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f7dc6f; /* 明るい黄色 */
+            border-radius: 5px;
+            text-align: center;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .choice-button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 1em;
+            background-color: #3498db; /* 青 */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .choice-button:hover {
+            background-color: #2980b9;
+        }
+        .correct {
+            background-color: #2ecc71 !important; /* 緑 */
+        }
+        .wrong {
+            background-color: #e74c3c !important; /* 赤 */
+        }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        #result-area {
+            text-align: center;
+            padding: 20px 0;
+        }
+        #final-score {
+            font-size: 1.8em;
+            color: #27ae60;
+            margin: 10px 0;
+            font-weight: bold;
+            white-space: pre-wrap; /* 改行を有効にする */
+        }
+        #restart-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>英検3級 3分間熟語クイズ</h1>
+        
+        <div id="quiz-area">
+            <div id="status">
+                <span id="timer">残り時間: 180秒</span>
+                <span id="score">正解数: 0問</span>
+            </div>
+
+            <p id="question-text">問題文が表示されます。</p>
+
+            <div id="choices-container">
+                </div>
+        </div>
+
+        <div id="result-area" class="hidden">
+            <h2>結果発表！</h2>
+            <p id="final-score"></p>
+            <button id="restart-button">もう一度チャレンジ！</button>
+        </div>
+    </div>
+
+    <script>
+        // --- クイズデータ (50問) ---
+        const quizData = [
+            // be動詞を使った熟語 (10問)
+            { question: "「〜することができる」は？", choices: ["be interested in", "be able to", "be afraid of", "be busy with"], answer: 1 },
+            { question: "「〜を休む」は？", choices: ["be late for", "be different from", "be absent from", "be ready for"], answer: 2 },
+            { question: "「〜を恐れる」は？", choices: ["be afraid of", "be proud of", "be full of", "be famous for"], answer: 0 },
+            { question: "「〜で忙しい」は？", choices: ["be different from", "be surprised at", "be worried about", "be busy with"], answer: 3 },
+            { question: "「〜と異なる」は？", choices: ["be different from", "be covered with", "be full of", "be known as"], answer: 0 },
+            { question: "「〜で有名だ」は？", choices: ["be proud of", "be known for", "be famous for", "be ready for"], answer: 2 },
+            { question: "「〜に興味がある」は？", choices: ["be late for", "be interested in", "be able to", "be good at"], answer: 1 },
+            { question: "「〜に遅れる」は？", choices: ["be surprised at", "be late for", "be absent from", "be satisfied with"], answer: 1 },
+            { question: "「〜を誇りに思う」は？", choices: ["be known as", "be proud of", "be similar to", "be pleased to do"], answer: 1 },
+            { question: "「〜の準備ができている」は？", choices: ["be ready for", "be good at", "be able to", "be busy with"], answer: 0 },
+            
+            // 動詞を使った熟語 (25問)
+            { question: "「〜に賛成する」は？", choices: ["belong to", "agree with", "look like", "look forward to"], answer: 1 },
+            { question: "「〜に到着する」は？", choices: ["arrive at/in", "go for a walk", "get off", "get on"], answer: 0 },
+            { question: "「〜に所属する」は？", choices: ["do one's best", "come true", "belong to", "find out"], answer: 2 },
+            { question: "「実現する」は？", choices: ["come true", "make a speech", "take off", "put on"], answer: 0 },
+            { question: "「最善を尽くす」は？", choices: ["do one's best", "pick up", "try on", "turn on"], answer: 0 },
+            { question: "「〜を見つけ出す」は？", choices: ["turn down", "find out", "take care of", "take part in"], answer: 1 },
+            { question: "「（乗り物）から降りる」は？", choices: ["get to", "get on", "get off", "call back"], answer: 2 },
+            { question: "「（乗り物）に乗る」は？", choices: ["get off", "get on", "go shopping", "hand in"], answer: 1 },
+            { question: "「散歩に行く」は？", choices: ["go on a trip", "take a walk", "go for a walk", "take care of"], answer: 2 },
+            { question: "「旅行に出かける」は？", choices: ["go shopping", "go on a trip", "run away", "send for"], answer: 1 },
+            { question: "「頭痛がする」は？", choices: ["have a headache", "have a cold", "have an accident", "have a break"], answer: 0 },
+            { question: "「〜を世話する」は？", choices: ["look for", "look after", "look up", "look like"], answer: 1 },
+            { question: "「〜を楽しみに待つ」は？", choices: ["look forward to", "look like", "agree with", "belong to"], answer: 0 },
+            { question: "「〜のように見える」は？", choices: ["look up", "look for", "look like", "look after"], answer: 2 },
+            { question: "「スピーチをする」は？", choices: ["do one's best", "come true", "make a speech", "go for a walk"], answer: 2 },
+            { question: "「〜を車で迎えに行く」は？", choices: ["pick up", "put on", "take off", "turn on"], answer: 0 },
+            { question: "「〜を着る」は？", choices: ["take off", "turn off", "put on", "try on"], answer: 2 },
+            { question: "「〜を世話する」（take）は？", choices: ["take care of", "take part in", "take off", "try on"], answer: 0 },
+            { question: "「〜を脱ぐ」は？", choices: ["put on", "turn on", "take off", "turn down"], answer: 2 },
+            { question: "「〜に参加する」は？", choices: ["take part in", "take a walk", "go on a trip", "run away"], answer: 0 },
+            { question: "「〜を試着する」は？", choices: ["put on", "take off", "try on", "pick up"], answer: 2 },
+            { question: "「（音量など）を下げる」は？", choices: ["turn on", "turn off", "turn down", "turn up"], answer: 2 },
+            { question: "「（電気など）を消す」は？", choices: ["turn on", "turn off", "put on", "take off"], answer: 1 },
+            { question: "「（電気など）をつける」は？", choices: ["turn on", "turn off", "turn down", "turn up"], answer: 0 },
+            { question: "「〜に折り返し電話をする」は？", choices: ["call on", "call back", "send for", "look for"], answer: 1 },
+
+            // 前置詞などを使った句 (15問)
+            { question: "「少数の〜（数えられる名詞）」は？", choices: ["a little", "a lot of", "a few", "a cup of"], answer: 2 },
+            { question: "「たくさんの〜」は？", choices: ["a lot of", "a few", "a little", "all over the world"], answer: 0 },
+            { question: "「初めは、最初は」は？", choices: ["at first", "at last", "in front of", "for a while"], answer: 0 },
+            { question: "「ついに、とうとう」は？", choices: ["at last", "at first", "by the way", "on foot"], answer: 0 },
+            { question: "「〜の終わりに」は？", choices: ["at the same time", "at the end of", "in a hurry", "next to"], answer: 1 },
+            { question: "「〜のために、〜のせいで」は？", choices: ["by the way", "on foot", "a lot of", "because of"], answer: 3 },
+            { question: "「AとBの両方」は？", choices: ["both A and B", "either A or B", "neither A nor B", "not only A but also B"], answer: 0 },
+            { question: "「ひとりで」は？", choices: ["by mistake", "by oneself", "for free", "for example"], answer: 1 },
+            { question: "「ところで」は？", choices: ["by the way", "at home", "in the future", "to tell the truth"], answer: 0 },
+            { question: "「しばらくの間」は？", choices: ["for free", "for a while", "for the first time", "a cup of"], answer: 1 },
+            { question: "「無料で」は？", choices: ["for free", "at any time", "by mistake", "for example"], answer: 0 },
+            { question: "「初めて」は？", choices: ["for a while", "for free", "for the first time", "a little"], answer: 2 },
+            { question: "「〜の前に」は？", choices: ["in front of", "next to", "on the way to", "at home"], answer: 0 },
+            { question: "「徒歩で」は？", choices: ["by mistake", "on foot", "in a hurry", "all over the world"], answer: 1 },
+            { question: "「〜へ行く途中で」は？", choices: ["on the way to", "in front of", "at the end of", "by the way"], answer: 0 },
+
+            // 追加の熟語 (5問)
+            { question: "「〜を探す」は？", choices: ["look up", "look after", "look for", "look like"], answer: 2 },
+            { question: "「〜を提出する」は？", choices: ["hand in", "send for", "run away", "pick up"], answer: 0 },
+            { question: "「〜に頼る」は？", choices: ["depend on", "arrive at/in", "get to", "work for"], answer: 0 },
+            { question: "「〜に記入する」は？", choices: ["fill out", "fill in", "clean up", "cut down"], answer: 0 },
+            { question: "「将来、今後」は？", choices: ["in the future", "before long", "after a while", "at the end of"], answer: 0 }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timeLeft = 180; // 3分 = 180秒
+        let timerInterval;
+
+        const questionText = document.getElementById('question-text');
+        const choicesContainer = document.getElementById('choices-container');
+        const timerDisplay = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('score');
+        const quizArea = document.getElementById('quiz-area');
+        const resultArea = document.getElementById('result-area');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        // 初期化とタイマー開始
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            timeLeft = 180;
+            scoreDisplay.textContent = `正解数: ${score}問`;
+            quizArea.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            
+            // 問題をシャッフル
+            shuffleArray(quizData); 
+            
+            startTimer();
+            showQuestion();
+        }
+
+        // 配列シャッフル関数 (問題順をランダムにする)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // タイマー設定
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `残り時間: ${timeLeft}秒`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        // 問題表示
+        function showQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                // 全問終了した場合 
+                clearInterval(timerInterval);
+                endQuiz();
+                return;
+            }
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionText.textContent = currentQuestion.question;
+            choicesContainer.innerHTML = '';
+
+            // 選択肢をランダムに並び替えるための配列
+            const shuffledChoices = [...currentQuestion.choices];
+            shuffleArray(shuffledChoices);
+
+            shuffledChoices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.classList.add('choice-button');
+                button.textContent = choice;
+                // 正しい選択肢の元のインデックスを探して格納
+                const originalIndex = currentQuestion.choices.indexOf(choice); 
+                button.dataset.index = originalIndex;
+
+                button.addEventListener('click', () => selectAnswer(button, currentQuestion.answer));
+                choicesContainer.appendChild(button);
+            });
+        }
+
+        // 回答選択時の処理
+        function selectAnswer(selectedButton, correctAnswerIndex) {
+            const selectedIndex = parseInt(selectedButton.dataset.index);
+            const isCorrect = selectedIndex === correctAnswerIndex;
+
+            // 全てのボタンを無効化
+            document.querySelectorAll('.choice-button').forEach(btn => {
+                btn.classList.add('disabled');
+            });
+
+            if (isCorrect) {
+                selectedButton.classList.add('correct');
+                score++;
+                scoreDisplay.textContent = `正解数: ${score}問`;
+            } else {
+                selectedButton.classList.add('wrong');
+                // 正解のボタンを表示
+                const correctChoiceText = quizData[currentQuestionIndex].choices[correctAnswerIndex];
+                document.querySelectorAll('.choice-button').forEach(btn => {
+                    if (btn.textContent === correctChoiceText) {
+                        btn.classList.add('correct');
+                    }
+                });
+            }
+
+            // 1秒後に次の問題へ
+            setTimeout(() => {
+                currentQuestionIndex++;
+                showQuestion();
+            }, 1000);
+        }
+
+        // クイズ終了
+        function endQuiz() {
+            quizArea.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            // タイムアップまたは全問終了かによってメッセージを変える
+            const message = (timeLeft <= 0) 
+                ? `タイムアップ！\n3分間で ${score}問 正解しました！`
+                : `全 ${quizData.length}問 終了！\n${score}問 正解しました！`;
+                
+            finalScoreDisplay.textContent = message;
+        }
+
+        // リスタートボタンのイベント
+        restartButton.addEventListener('click', startQuiz);
+
+        // ページロード時にクイズ開始
+        startQuiz();
+    </script>
+</body>
+</html>
